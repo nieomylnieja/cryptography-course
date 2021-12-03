@@ -1,0 +1,172 @@
+{
+  "test": {
+    "flags": [
+      {
+        "args": [
+          "--bbs"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "bbs",
+          "help": "test BBS sequence"
+        }
+      },
+      {
+        "args": [
+          "-f",
+          "--file"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "file_path",
+          "help": "provide a file path to the test"
+        }
+      }
+    ],
+    "help": "test the given byte sequence"
+  },
+  "generate-blum-int": {
+    "help": "generate new Blum Integer and write result to numbers/blum.int"
+  },
+  "modes": {
+    "flags": [
+      {
+        "args": [
+          "--cbc"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "cbc",
+          "help": "run in CBC mode"
+        }
+      },
+      {
+        "args": [
+          "--gcm"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "gcm",
+          "help": "run in GCM mode"
+        }
+      },
+      {
+        "args": [
+          "-f",
+          "--file"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "file_path",
+          "help": "provide a file to encrypt"
+        }
+      }
+    ],
+    "help": "run self-made implementations of block cipher modes"
+  },
+  "bbs": {
+    "flags": [
+      {
+        "args": [
+          "-g",
+          "--generate"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "generate",
+          "help": "generate BBS sequence"
+        }
+      },
+      {
+        "args": [
+          "-l",
+          "--seq-len"
+        ],
+        "kwargs": {
+          "type": "int",
+          "default": 20000,
+          "dest": "seq_len",
+          "help": "sequence length used in BBS"
+        }
+      },
+      {
+        "args": [
+          "-c",
+          "--cypher"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "cypher",
+          "help": "cypher the input message using BBS generator"
+        }
+      },
+      {
+        "args": [
+          "-f",
+          "--file"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "file_path",
+          "help": "provide a file path to the BBS sequence"
+        }
+      }
+    ],
+    "help": "run BBS generation algorithm"
+  },
+  "bench": {
+    "flags": [
+      {
+        "args": [
+          "--block-cypher"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "block_cypher",
+          "help": "test block cyphers encryption/decryption speed"
+        }
+      },
+      {
+        "args": [
+          "-f",
+          "--files"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "file_paths",
+          "help": "provide a csv list of file paths to the test"
+        }
+      },
+      {
+        "args": [
+          "-d",
+          "--dir"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "dir_path",
+          "help": "provide directory path with files for the test"
+        }
+      },
+      {
+        "args": [
+          "-o",
+          "--out"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "output",
+          "default": "df",
+          "choices": [
+            "json",
+            "excel",
+            "df",
+            "csv"
+          ],
+          "help": "provide the output type of the benchmark"
+        }
+      }
+    ],
+    "help": "run benchmark tests"
+  }
+}
