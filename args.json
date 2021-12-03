@@ -42,12 +42,33 @@
       },
       {
         "args": [
-          "--gcm"
+          "--ctr"
         ],
         "kwargs": {
           "action": "store_true",
-          "dest": "gcm",
-          "help": "run in GCM mode"
+          "dest": "ctr",
+          "help": "run in CTR mode"
+        }
+      },
+      {
+        "args": [
+          "-b",
+          "--boo-boo"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "boo_boo",
+          "default": "none",
+          "choices": [
+            "none",
+            "rm-random-block",
+            "clone-random-block",
+            "swap-random-blocks",
+            "swap-random-bytes-in-random-block",
+            "modify-random-byte-in-random-block",
+            "rm-random-byte-from-random-block"
+          ],
+          "help": "mess with the encrypted message, and see what happens!"
         }
       },
       {

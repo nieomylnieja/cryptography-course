@@ -4,6 +4,9 @@ from abc import ABCMeta, abstractmethod
 from bitarray import bitarray
 from cryptography.hazmat.primitives.ciphers import modes, algorithms, Cipher
 from rich.console import Console
+from rich.markdown import Markdown
+
+from cipher.booboo import BooBoo
 
 console = Console()
 
@@ -78,19 +81,38 @@ class CustomMode(metaclass=ABCMeta):
             encryptor = self._cipher.decryptor()
             return encryptor.update(data) + encryptor.finalize()
 
-    def run(self, data: bytes):
-        encrypted_block = self._encrypt(data)
-        decrypted_blocks = self._decrypt(b"".join(encrypted_block))
+    def run(self, data: bytes, boo_boo: str):
+        encrypted_blocks = self._encrypt(data)
+        encrypted_blocks = BooBoo(encrypted_blocks).from_args(boo_boo)
+        decrypted_blocks = self._decrypt(b"".join(encrypted_blocks))
 
         input_blocks = self._split(data)
+
+        # adjust the length of all lists to fit into zip()
+        if len(decrypted_blocks) > len(input_blocks):
+            input_blocks.extend((len(decrypted_blocks) - len(input_blocks)) * [b""])
+        if len(decrypted_blocks) < len(input_blocks):
+            diff = len(input_blocks) - len(decrypted_blocks)
+            encrypted_blocks.extend(diff * [b""])
+            decrypted_blocks.extend(diff * [b""])
+
         block_n = 0
-        for i, enc, dec in zip(input_blocks, encrypted_block, decrypted_blocks):
+        for i, enc, dec in zip(input_blocks, encrypted_blocks, decrypted_blocks):
+            try:
+                decoded_str = dec.decode('utf-8')
+            except UnicodeDecodeError:
+                decoded_str = dec
             block_n += 1
-            console.print(f"""BLOCK {block_n}
+            console.print(f"""BLOCK {block_n} 
 • IN:  [bold blue]'{i.decode('utf-8')}'[/bold blue]
 • ENC: [bold red]{enc.__str__().lstrip("b")}[/bold red]
-• DEC: [bold yellow]'{dec.decode('utf-8')}'[/bold yellow]
+• DEC: [bold yellow]'{decoded_str}'[/bold yellow]
             """, style="bold green")
+
+        console.print(Markdown(f"""## SUMMARY:
+### Mode: {self.name}
+### BooBoo: {boo_boo}
+"""))
 
     @abstractmethod
     def _encrypt(self, data: bytes) -> list[bytes]:
@@ -99,6 +121,11 @@ class CustomMode(metaclass=ABCMeta):
     @abstractmethod
     def _decrypt(self, data: bytes) -> list[bytes]:
         raise NotImplementedError("CustomMode must implement _decrypt method")
+
+    @property
+    @abstractmethod
+    def name(self):
+        raise NotImplementedError("CustomMode must implement name property")
 
     @staticmethod
     def _xor(first: bytes, second: bytes) -> bytes:
@@ -111,6 +138,7 @@ class CustomMode(metaclass=ABCMeta):
 
 
 class CBCMode(CustomMode):
+    name = "CBC"
 
     def __init__(self):
         super().__init__()
@@ -122,10 +150,14 @@ class CBCMode(CustomMode):
         encrypted: list[bytes] = []
         previous_result = self.iv
 
-        for block in blocks:
-            block = CMS.add_padding(block, self.block_size)
-            previous_result = self.black_box.encrypt(self._xor(previous_result, block))
-            encrypted.append(previous_result)
+        for i, block in enumerate(blocks):
+            try:
+                block = CMS.add_padding(block, self.block_size)
+                previous_result = self.black_box.encrypt(self._xor(previous_result, block))
+                encrypted.append(previous_result)
+            except ValueError as e:
+                console.log(f"Skipping block NR {i} during encryption due to exception: {e}")
+                encrypted.append(b"FAILED BLOCK")
 
         return encrypted
 
@@ -135,26 +167,63 @@ class CBCMode(CustomMode):
         decrypted: list[bytes] = []
         previous_block = self.iv
 
-        for block in blocks:
-            dec_block = self._xor(previous_block, self.black_box.decrypt(block))
-            dec_block = CMS.rm_padding(dec_block, self.block_size)
+        for i, block in enumerate(blocks):
+            try:
+                dec_block = self._xor(previous_block, self.black_box.decrypt(block))
+                dec_block = CMS.rm_padding(dec_block, self.block_size)
+            except ValueError as e:
+                console.log(f"Skipping block NR {i} during decryption due to exception: {e}")
+                dec_block = b"FAILED BLOCK"
             decrypted.append(dec_block)
             previous_block = block
 
         return decrypted
 
 
-class GCMMode(CustomMode):
+class CTRMode(CustomMode):
+    name = "CTR"
 
     def __init__(self):
         super().__init__()
         self.nonce = os.urandom(self.block_size)
 
     def _encrypt(self, data: bytes) -> list[bytes]:
-        pass
+        blocks = self._split(data)
 
-    def _decrypt(self, data: bytes) -> list[bytes]:
-        pass
+        encrypted: list[bytes] = []
+        nonce_int = int.from_bytes(self.nonce, "big")
+
+        for i, block in enumerate(blocks):
+            try:
+                i_nonce = (nonce_int + i).to_bytes(len(self.nonce), "big")
+                i_nonce = self.black_box.encrypt(i_nonce)
+                block = CMS.add_padding(block, self.block_size)
+                i_enc = self._xor(block, i_nonce)
+            except ValueError as e:
+                console.log(f"Skipping block NR {i} during encryption due to exception: {e}")
+                i_enc = b"FAILED BLOCK"
+            encrypted.append(i_enc)
+
+        return encrypted
+
+    def _decrypt(self, enc: bytes) -> list[bytes]:
+        blocks = self._split(enc)
+
+        decrypted: list[bytes] = []
+        nonce_int = int.from_bytes(self.nonce, "big")
+
+        for i, block in enumerate(blocks):
+            try:
+                i_nonce = (nonce_int + i).to_bytes(len(self.nonce), "big")
+                i_nonce = self.black_box.encrypt(i_nonce)
+                i_dec = self._xor(block, i_nonce)
+                i_dec = CMS.rm_padding(i_dec, self.block_size)
+            except ValueError as e:
+                console.log(f"Skipping block NR {i} during decryption due to exception: {e}")
+                i_dec = b"FAILED BLOCK"
+            decrypted.append(i_dec)
+
+        return decrypted
 
 
 class CMS:

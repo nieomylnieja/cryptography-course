@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 import pandas as pd
 from pandas import DataFrame
 
-from cipher.cipher import BBSCipher, CBCMode, GCMMode
+from cipher.cipher import BBSCipher, CBCMode, CTRMode
 from generators.bbs import BBS
 from tests.bench import BenchBlockCypher
 from tests.test import bbs_run_tests
@@ -146,9 +146,9 @@ class SubcommandModes(Subcommand):
         mode = None
         if args.cbc:
             mode = CBCMode()
-        if args.gcm:
-            mode = GCMMode()
+        if args.ctr:
+            mode = CTRMode()
         if mode is None:
             raise ValueError("unknown mode provided")
 
-        mode.run(data)
+        mode.run(data, args.boo_boo)
