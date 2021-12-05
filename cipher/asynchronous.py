@@ -15,7 +15,7 @@ class RSASimple:
     def __init__(self):
         self.preset = None
 
-    def run(self, msg: bytes):
+    def run_encryption(self, msg: bytes):
         if not self.preset:
             console.log("Generating new preset")
             self.generate_preset()
@@ -34,6 +34,9 @@ class RSASimple:
 [bold]Decrypted:[/bold]
 [green]{str(decrypted).lstrip('b')}[/green]
 """)
+
+    def run_signing(self, msg: bytes):
+        pass
 
     def encrypt(self, msg: bytes) -> list[int]:
         encrypted = []

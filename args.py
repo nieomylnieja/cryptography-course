@@ -163,7 +163,12 @@ class SubcommandRSA(Subcommand):
             data = f.read().encode(encoding="utf-8")
         if args.simple:
             simple_rsa = RSASimple()
-            if args.simple_preset_file:
-                with open(args.simple_preset_file, "r") as f:
+
+            if args.preset_file:
+                with open(args.preset_file, "r") as f:
                     simple_rsa.with_preset(f.read())
-            simple_rsa.run(data)
+
+            if args.encrypt:
+                simple_rsa.run_encryption(data)
+            if args.sign:
+                simple_rsa.run_signing(data)

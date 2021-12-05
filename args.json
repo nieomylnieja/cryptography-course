@@ -194,7 +194,6 @@
     "flags": [
       {
         "args": [
-          "-s",
           "--simple"
         ],
         "kwargs": {
@@ -205,12 +204,34 @@
       },
       {
         "args": [
-          "--with-simple-preset"
+          "-e",
+          "--encrypt"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "encrypt",
+          "help": "encrypt and decrypt a chosen message [pub enc --> priv dec]"
+        }
+      },
+      {
+        "args": [
+          "-s",
+          "--sign"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "sign",
+          "help": "sign and decrypt the message [priv enc --> pub dec]"
+        }
+      },
+      {
+        "args": [
+          "--with-preset"
         ],
         "kwargs": {
           "type": "str",
-          "dest": "simple_preset_file",
-          "help": "read preset for simple version from file"
+          "dest": "preset_file",
+          "help": "read preset from file"
         }
       },
       {
