@@ -10,7 +10,8 @@ from argparse import ArgumentParser
 import pandas as pd
 from pandas import DataFrame
 
-from cipher.cipher import BBSCipher, CBCMode, CTRMode
+from cipher.asynchronous import RSASimple
+from cipher.block import BBSCipher, CBCMode, CTRMode
 from generators.bbs import BBS
 from tests.bench import BenchBlockCypher
 from tests.test import bbs_run_tests
@@ -24,6 +25,7 @@ def get_subcommands() -> dict[str:"Subcommand"]:
         "bbs": SubcommandBBS(),
         "bench": SubcommandBench(),
         "modes": SubcommandModes(),
+        "rsa": SubcommandRSA(),
     }
 
 
@@ -152,3 +154,16 @@ class SubcommandModes(Subcommand):
             raise ValueError("unknown mode provided")
 
         mode.run(data, args.boo_boo)
+
+
+class SubcommandRSA(Subcommand):
+
+    def run(self, args, unknown_args):
+        with open(args.file_path, "r") as f:
+            data = f.read().encode(encoding="utf-8")
+        if args.simple:
+            simple_rsa = RSASimple()
+            if args.simple_preset_file:
+                with open(args.simple_preset_file, "r") as f:
+                    simple_rsa.with_preset(f.read())
+            simple_rsa.run(data)

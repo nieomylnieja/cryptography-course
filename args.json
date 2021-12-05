@@ -189,5 +189,42 @@
       }
     ],
     "help": "run benchmark tests"
+  },
+  "rsa": {
+    "flags": [
+      {
+        "args": [
+          "-s",
+          "--simple"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "simple",
+          "help": "run the simple version"
+        }
+      },
+      {
+        "args": [
+          "--with-simple-preset"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "simple_preset_file",
+          "help": "read preset for simple version from file"
+        }
+      },
+      {
+        "args": [
+          "-f",
+          "--file"
+        ],
+        "kwargs": {
+          "type": "str",
+          "dest": "file_path",
+          "help": "provide a file path to run the algorithm on"
+        }
+      }
+    ],
+    "help": "run RSA asynchronous algorithm"
   }
 }

@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers import algorithms, modes
 from pandas import DataFrame
 import pandas as pd
 
-from cipher.cipher import BlockCipher
+from cipher.block import BlockCipher
 
 
 class Benchmark(metaclass=ABCMeta):
