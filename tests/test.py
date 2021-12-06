@@ -4,6 +4,10 @@ from typing import Callable
 
 from tests.config import ConfigBBS
 
+from rich.console import Console
+
+console = Console()
+
 
 def bbs_run_tests(bits: str):
     if len(bits) > ConfigBBS.SERIES_LENGTH:
@@ -45,9 +49,9 @@ class Tests:
             if not test.passed:
                 all_tests_passed = False
         if all_tests_passed:
-            print("[SUCCESS] All tests have passed!")
+            console.print("[bold green][SUCCESS][/bold green] All tests have passed!")
         else:
-            print("[FAILURE] Some of the tests have failed!")
+            console.print("[bold red][FAILURE][/bold red] Some of the tests have failed!")
 
 
 class TestInterface(metaclass=ABCMeta):
@@ -67,13 +71,15 @@ class TestInterface(metaclass=ABCMeta):
 
     def _failing(self, result: any):
         self.passed = False
-        self._print("FAIL", result)
+        self._print("[bold red][FAIL][/bold red]", result)
 
     def _passing(self, result: any):
-        self._print("PASS", result)
+        self._print("[bold green][PASS][/bold green]", result)
 
     def _print(self, outcome: str, result: any):
-        print(f"[{outcome}] Test: {self.name}, Result: {result}, Expected: {self.expected}")
+        console.print(f"{outcome} Test: {self.name}\n"
+                      f" • [yellow]Expected:[/yellow] {self.expected}\n"
+                      f" • [blue]Result:[/blue]   {result}")
 
     @abstractmethod
     def run(self):
@@ -93,7 +99,7 @@ class TestSeriesLength(TestInterface):
 
 class TestSeries(TestInterface):
     name = "series"
-    expected = f"{ConfigBBS.SERIES_TEST_TABLE.items()}"
+    expected = f"{ConfigBBS.SERIES_TEST_TABLE}"
 
     def run(self):
         series_occurrences = {bit: {k: 0 for k in ConfigBBS.SERIES_TEST_TABLE.keys()} for bit in ["0", "1"]}

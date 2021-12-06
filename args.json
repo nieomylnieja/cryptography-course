@@ -13,6 +13,16 @@
       },
       {
         "args": [
+          "--bbs-cipher"
+        ],
+        "kwargs": {
+          "action": "store_true",
+          "dest": "bbs_cipher",
+          "help": "test BBS sequence ciphered message random properties"
+        }
+      },
+      {
+        "args": [
           "-f",
           "--file"
         ],
@@ -26,6 +36,30 @@
     "help": "test the given byte sequence"
   },
   "generate-blum-int": {
+    "flags": [
+      {
+        "args": [
+          "-p"
+        ],
+        "kwargs": {
+          "type": "int",
+          "required": true,
+          "dest": "p_len",
+          "help": "p prime length"
+        }
+      },
+      {
+        "args": [
+          "-q"
+        ],
+        "kwargs": {
+          "type": "int",
+          "required": true,
+          "dest": "q_len",
+          "help": "q prime length"
+        }
+      }
+    ],
     "help": "generate new Blum Integer and write result to numbers/blum.int"
   },
   "modes": {
@@ -113,12 +147,12 @@
       {
         "args": [
           "-c",
-          "--cypher"
+          "--cipher"
         ],
         "kwargs": {
           "action": "store_true",
-          "dest": "cypher",
-          "help": "cypher the input message using BBS generator"
+          "dest": "cipher",
+          "help": "cipher the input message using BBS generator"
         }
       },
       {
@@ -139,12 +173,12 @@
     "flags": [
       {
         "args": [
-          "--block-cypher"
+          "--block-cipher"
         ],
         "kwargs": {
           "action": "store_true",
-          "dest": "block_cypher",
-          "help": "test block cyphers encryption/decryption speed"
+          "dest": "block_cipher",
+          "help": "test block ciphers encryption/decryption speed"
         }
       },
       {

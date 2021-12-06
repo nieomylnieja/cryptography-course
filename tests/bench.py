@@ -39,7 +39,7 @@ class Benchmark(metaclass=ABCMeta):
         raise NotImplementedError("benchmark must implement run() method")
 
 
-class BenchBlockCypher(Benchmark):
+class BenchBlockCipher(Benchmark):
     BLOCK_SIZE_BYTES = 16
 
     _m = [

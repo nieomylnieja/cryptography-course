@@ -14,9 +14,25 @@ console = Console()
 class BBSCipher:
     encoding = "utf-8"
 
+    encrypted = b""
+
     def __init__(self, bbs_file_path: str):
+        if not bbs_file_path:
+            raise ValueError("provide file path to BBS sequence with -f")
         with open(bbs_file_path, "r") as f:
             self._key = bitarray(f.read())
+
+    def run(self, msg: str):
+        console.print(f"IN:  {msg}", style="blue")
+
+        encrypted = self.encrypt(msg)
+        pretty_enc = str(encrypted).lstrip('b').strip("'")
+        console.print(f"ENC: {pretty_enc}", style="red")
+
+        self.encrypted = encrypted
+
+        decrypted = self.decrypt(encrypted)
+        console.print(f"DEC: {decrypted.decode('utf-8')}", style="yellow")
 
     def encrypt(self, msg: str) -> bytes:
         msg_bits = bitarray()
@@ -30,7 +46,8 @@ class BBSCipher:
 
     def _xor_both(self, msg_bits: bitarray) -> bytes:
         if len(self._key) < len(msg_bits):
-            raise AttributeError("BBS sequence should be at least as long as the bit form of the message")
+            raise AttributeError(f"BBS sequence should be at least as long as the bit form of the message"
+                                 f", was: {len(msg_bits)} vs. key: {len(self._key)}")
 
         key_bits = self._key
         if len(self._key) > len(msg_bits):

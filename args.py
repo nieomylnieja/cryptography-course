@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import time
 from abc import abstractmethod, ABCMeta
@@ -8,12 +7,13 @@ from pydoc import locate
 from argparse import ArgumentParser
 
 import pandas as pd
+from bitarray import bitarray
 from pandas import DataFrame
 
 from cipher.asynchronous import RSASimple
 from cipher.block import BBSCipher, CBCMode, CTRMode
 from generators.bbs import BBS
-from tests.bench import BenchBlockCypher
+from tests.bench import BenchBlockCipher
 from tests.test import bbs_run_tests
 from utils.blum import generate_blum_integer
 
@@ -66,10 +66,23 @@ class Subcommand(metaclass=ABCMeta):
 class SubcommandTest(Subcommand):
     def run(self, args, unknown_args):
         if args.bbs:
-            path = Path(args.file_path)
-            with open(path, "r") as f:
-                bits = f.read()
-            bbs_run_tests(bits)
+            with open(args.file_path, "r") as f:
+                bbs = f.read()
+            bbs_run_tests(bbs)
+        if args.bbs_cipher:
+            if len(unknown_args) == 0:
+                raise AttributeError("provide a message or a path to a file containing message")
+            msg = " ".join(unknown_args)
+            if os.path.exists(unknown_args[0]):
+                with open(unknown_args[0], "r") as f:
+                    msg = f.read()
+            cipher = BBSCipher(args.file_path)
+            cipher.run(msg)
+
+            bits = bitarray()
+            bits.frombytes(cipher.encrypted)
+
+            bbs_run_tests(bits.to01())
 
 
 class SubcommandBench(Subcommand):
@@ -78,7 +91,7 @@ class SubcommandBench(Subcommand):
     def run(self, args, unknown_args):
         results: list[DataFrame] = []
         for path, data in self._read_files(args).items():
-            results.append(BenchBlockCypher(path, data).run())
+            results.append(BenchBlockCipher(path, data).run())
 
         df = pd.concat(results, ignore_index=True)
         if args.output == "excel":
@@ -114,29 +127,27 @@ class SubcommandBench(Subcommand):
 class SubcommandGenerateBlumInt(Subcommand):
     def run(self, args, unknown_args):
         with open("numbers/blum.integer", "w") as f:
-            f.write(str(generate_blum_integer()))
+            f.write(str(generate_blum_integer(p_len=args.p_len, q_len=args.q_len)))
 
 
 class SubcommandBBS(Subcommand):
     def run(self, args, unknown_args):
         if args.generate:
             seq = BBS.new(args.seq_len)
-            with open(f"sequence/{time.time_ns()}.{args.seq_len}.bbs", "w") as f:
-                f.write(seq)
-        if args.cypher:
+            if seq:
+                seq_path = Path('./sequence')
+                if not seq_path.exists():
+                    seq_path.mkdir(parents=True, exist_ok=True)
+                with open(seq_path.joinpath(f"{time.time_ns()}.{args.seq_len}.bbs"), "w") as f:
+                    f.write(seq)
+        if args.cipher:
             if len(unknown_args) == 0:
                 raise AttributeError("provide a message or a path to a file containing message")
             msg = " ".join(unknown_args)
             if os.path.exists(unknown_args[0]):
                 with open(unknown_args[0], "r") as f:
                     msg = f.read()
-            cypher = BBSCipher(args.file_path)
-
-            encrypted = cypher.encrypt(msg)
-            logging.info(f"Encrypted message: {encrypted}")
-
-            decrypted = cypher.decrypt(encrypted)
-            logging.info(f"Decrypted message: {decrypted.decode('utf-8')}")
+            BBSCipher(args.file_path).run(msg)
 
 
 class SubcommandModes(Subcommand):
