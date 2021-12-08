@@ -1,9 +1,9 @@
 import os
-import timeit
+import time
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from pathlib import Path
-from typing import Callable
+from statistics import mean
 
 from cryptography.hazmat.primitives.ciphers import algorithms, modes
 from pandas import DataFrame
@@ -17,15 +17,14 @@ class Benchmark(metaclass=ABCMeta):
 
     bench_result = namedtuple("BenchResult", ["details", "result"])
 
-    def __init__(self, path: Path, num_iter: int = 100000):
+    def __init__(self, path: Path, num_iter: int):
         self.num_iter = num_iter
         self.filename = path.name
 
-    def timeit(self, details: dict, f: Callable):
-        duration = timeit.Timer(f).timeit(number=self.num_iter)
+    def timeit(self, details: dict, duration: float):
         self.benchmarks.append(self.bench_result(
             details=details,
-            result=(duration / self.num_iter) * 1000))
+            result=duration))
 
     def summarize(self) -> DataFrame:
         frames: list[DataFrame] = []
@@ -52,7 +51,7 @@ class BenchBlockCipher(Benchmark):
                 modes.OFB(initialization_vector=os.urandom(16)),
                 modes.CFB8(initialization_vector=os.urandom(16)),
                 modes.CTR(nonce=os.urandom(16)),
-                modes.GCM(initialization_vector=os.urandom(16), tag=os.urandom(16)),
+                modes.GCM(initialization_vector=os.urandom(16)),
                 modes.XTS(tweak=os.urandom(16)),
             ],
         },
@@ -63,10 +62,7 @@ class BenchBlockCipher(Benchmark):
                 modes.CBC(initialization_vector=os.urandom(16)),
                 modes.CFB(initialization_vector=os.urandom(16)),
                 modes.OFB(initialization_vector=os.urandom(16)),
-                modes.CFB8(initialization_vector=os.urandom(16)),
                 modes.CTR(nonce=os.urandom(16)),
-                modes.GCM(initialization_vector=os.urandom(16), tag=os.urandom(16)),
-                modes.XTS(tweak=os.urandom(16)),
             ],
         },
         {
@@ -77,20 +73,37 @@ class BenchBlockCipher(Benchmark):
                 modes.CFB(initialization_vector=os.urandom(8)),
                 modes.OFB(initialization_vector=os.urandom(8)),
                 modes.CFB8(initialization_vector=os.urandom(8)),
-                modes.CTR(nonce=os.urandom(8)),
             ],
         }
     ]
 
-    def __init__(self, path: Path, data: bytes, num_iter: int = 100000):
+    def __init__(self, path: Path, data: bytes, num_iter: int = 10):
         super().__init__(path, num_iter)
         self.data = data + b" " * (self.BLOCK_SIZE_BYTES - len(data) % self.BLOCK_SIZE_BYTES)
 
     def run(self) -> DataFrame:
         for a in self._m:
             for mode in a["modes"]:
-                bc = BlockCipher(a["algorithm"], mode, self.data)
-                self.timeit(bc.details | {"op": "encryption"}, lambda: bc.encrypt)
-                self.timeit(bc.details | {"op": "decryption"}, lambda: bc.decrypt)
+                enc_results, dec_results = [], []
+                for i in range(self.num_iter):
+                    bc = BlockCipher(a["algorithm"], mode, self.data)
+
+                    start_enc = time.perf_counter()
+                    bc.encrypt()
+                    end_enc = time.perf_counter()
+
+                    start_dec = time.perf_counter()
+                    bc.decrypt()
+                    end_dec = time.perf_counter()
+
+                    enc_results.append(end_enc - start_enc)
+                    dec_results.append(end_dec - start_dec)
+
+                details = {
+                    "algo": a["algorithm"].name,
+                    "mode": mode.name,
+                }
+                self.timeit(details | {"op": "encryption"}, mean(enc_results))
+                self.timeit(details | {"op": "decryption"}, mean(dec_results))
 
         return self.summarize()

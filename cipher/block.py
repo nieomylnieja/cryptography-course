@@ -61,23 +61,22 @@ class BlockCipher:
     dec_data: str = ""
 
     def __init__(self, algorithm: algorithms.CipherAlgorithm, mode: modes.Mode, data: bytes):
+        self.tag = None
         self.data = data
         self.cipher = Cipher(algorithm, mode)
-
-    @property
-    def details(self) -> dict[str:str]:
-        return {
-            "algo": self.cipher.algorithm.name,
-            "mode": self.cipher.mode.name,
-        }
 
     def encrypt(self):
         encryptor = self.cipher.encryptor()
         self.enc_data = encryptor.update(self.data) + encryptor.finalize()
+        if isinstance(self.cipher.mode, modes.ModeWithAuthenticationTag):
+            self.tag = encryptor.tag
 
     def decrypt(self):
         decryptor = self.cipher.decryptor()
-        self.dec_data = decryptor.update(self.enc_data) + decryptor.finalize()
+        if isinstance(self.cipher.mode, modes.ModeWithAuthenticationTag):
+            self.dec_data = decryptor.update(self.enc_data) + decryptor.finalize_with_tag(self.tag)
+        else:
+            self.dec_data = decryptor.update(self.enc_data) + decryptor.finalize()
 
 
 class CustomMode(metaclass=ABCMeta):

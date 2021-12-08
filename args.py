@@ -10,7 +10,7 @@ import pandas as pd
 from bitarray import bitarray
 from pandas import DataFrame
 
-from cipher.asynchronous import RSASimple
+from cipher.asymmetric import RSASimple
 from cipher.block import BBSCipher, CBCMode, CTRMode
 from generators.bbs import BBS
 from tests.bench import BenchBlockCipher
